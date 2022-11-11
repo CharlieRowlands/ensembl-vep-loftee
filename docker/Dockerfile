@@ -35,7 +35,7 @@ RUN if [ "$BRANCH" = "main" ]; \
     # Get ensembl cpanfile in order to get the list of the required Perl libraries
     wget -q "https://raw.githubusercontent.com/Ensembl/ensembl/$BRANCH/cpanfile" -O "ensembl_cpanfile" && \
     # Clone ensembl-vep git repository
-    git clone $BRANCH_OPT --depth 1 https://github.com/Ensembl/ensembl-vep.git && chmod u+x ensembl-vep/*.pl && \
+    git clone $BRANCH_OPT --depth 1 https://github.com/CharlieRowlands/ensembl-vep-loftee.git && chmod u+x ensembl-vep-loftee/*.pl && \
     # Clone ensembl-variation git repository and compile C code
     git clone $BRANCH_OPT --depth 1 https://github.com/Ensembl/ensembl-variation.git && \
     mkdir var_c_code && \
@@ -48,13 +48,13 @@ RUN if [ "$BRANCH" = "main" ]; \
     wget https://github.com/Ensembl/ensembl-xs/archive/2.3.2.zip -O ensembl-xs.zip && \
     unzip -q ensembl-xs.zip && mv ensembl-xs-2.3.2 ensembl-xs && rm -rf ensembl-xs.zip && \
     # Clone/Download other repositories: bioperl-live is needed so the cpanm dependencies installation from the ensembl-vep/cpanfile file takes less disk space
-    ensembl-vep/travisci/get_dependencies.sh && \
+    ensembl-vep-loftee/travisci/get_dependencies.sh && \
     # Only keep the bioperl-live "Bio" library
     mv bioperl-live bioperl-live_bak && mkdir bioperl-live && mv bioperl-live_bak/Bio bioperl-live/ && rm -rf bioperl-live_bak && \
     ## A lot of cleanup on the imported libraries, in order to reduce the docker image ##
     rm -rf Bio-HTS/.??* Bio-HTS/Changes Bio-HTS/DISCLAIMER Bio-HTS/MANIFEST* Bio-HTS/README Bio-HTS/scripts Bio-HTS/t Bio-HTS/travisci \
            bioperl-ext/.??* bioperl-ext/Bio/SeqIO bioperl-ext/Bio/Tools bioperl-ext/Makefile.PL bioperl-ext/README* bioperl-ext/t bioperl-ext/examples \
-           ensembl-vep/.??* ensembl-vep/docker \
+           ensembl-vep-loftee/.??* ensembl-vep-loftee/docker \
            ensembl-xs/.??* ensembl-xs/TODO ensembl-xs/Changes ensembl-xs/INSTALL ensembl-xs/MANIFEST ensembl-xs/README ensembl-xs/t ensembl-xs/travisci \
            htslib/.??* htslib/INSTALL htslib/NEWS htslib/README* htslib/test && \
     # Only keep needed kent-335_base libraries for VEP - used by Bio::DB::BigFile (bigWig parsing)
@@ -107,13 +107,13 @@ RUN apt-get update && apt-get -y install \
 # Setup VEP environment
 ENV OPT /opt/vep
 ENV OPT_SRC $OPT/src
-ENV PERL5LIB_TMP $PERL5LIB:$OPT_SRC/ensembl-vep:$OPT_SRC/ensembl-vep/modules
+ENV PERL5LIB_TMP $PERL5LIB:$OPT_SRC/ensembl-vep-loftee:$OPT_SRC/ensembl-vep-loftee/modules
 ENV PERL5LIB $PERL5LIB_TMP:$OPT_SRC/bioperl-live
 ENV KENT_SRC $OPT/src/kent-335_base/src
 ENV HTSLIB_DIR $OPT_SRC/htslib
 ENV MACHTYPE x86_64
 ENV DEPS $OPT_SRC
-ENV PATH $OPT_SRC/ensembl-vep:$OPT_SRC/var_c_code:$PATH
+ENV PATH $OPT_SRC/ensembl-vep-loftee:$OPT_SRC/var_c_code:$PATH
 ENV LANG_VAR en_US.UTF-8
 
 # Create vep user
@@ -137,14 +137,14 @@ RUN perl Makefile.PL && make && make install && rm -f Makefile* cpanfile
 
 WORKDIR $OPT_SRC
 # Install/compile more libraries
-RUN ensembl-vep/travisci/build_c.sh && \
+RUN ensembl-vep-loftee/travisci/build_c.sh && \
     # Remove unused Bio-DB-HTS files
     rm -rf Bio-HTS/cpanfile Bio-HTS/Build.PL Bio-HTS/Build Bio-HTS/_build Bio-HTS/INSTALL.pl && \
     # Install ensembl perl dependencies (cpanm)
     cpanm --installdeps --with-recommends --notest --cpanfile ensembl_cpanfile . && \
-    cpanm --installdeps --with-recommends --notest --cpanfile ensembl-vep/cpanfile . && \
+    cpanm --installdeps --with-recommends --notest --cpanfile ensembl-vep-loftee/cpanfile . && \
     # Delete bioperl and cpanfiles after the cpanm installs as bioperl will be reinstalled by the INSTALL.pl script
-    rm -rf bioperl-live ensembl_cpanfile ensembl-vep/cpanfile && \
+    rm -rf bioperl-live ensembl_cpanfile ensembl-vep-loftee/cpanfile && \
     # Configure "locale", see https://github.com/rocker-org/rocker/issues/19
     echo "$LANG_VAR UTF-8" >> /etc/locale.gen && locale-gen en_US.utf8 && \
     /usr/sbin/update-locale LANG=$LANG_VAR && \
@@ -159,7 +159,7 @@ USER vep
 ENV PERL5LIB $PERL5LIB_TMP
 
 # Final steps
-WORKDIR $OPT_SRC/ensembl-vep
+WORKDIR $OPT_SRC/ensembl-vep-loftee
 # Update bash profile
 RUN echo >> $OPT/.profile && \
     echo PATH=$PATH:\$PATH >> $OPT/.profile && \

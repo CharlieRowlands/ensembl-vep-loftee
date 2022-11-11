@@ -10,6 +10,11 @@ if [ ! -d htslib ]; then
   git clone --branch 1.9 --depth 1 https://github.com/samtools/htslib.git
 fi
 
+echo 'Getting SAMtools'
+if [ ! -d samtools ]; then
+  git clone --branch develop --depth 1 https://github.com/samtools/samtools.git
+fi
+
 echo 'Getting Bio::DB::HTS'
 if [ ! -d Bio-HTS ]; then
   git clone --branch release/v2.11 --depth 1 https://github.com/Ensembl/Bio-HTS.git
